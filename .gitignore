@@ -1,0 +1,9 @@
+# Ignore Python caches
+__pycache__/
+*.py[cod]
+
+# Ignore Docker temporary files
+*.log
+*.pid
+*.env
+
