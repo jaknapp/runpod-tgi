@@ -1,22 +1,24 @@
-FROM nvidia/cuda:12.2.0-cudnn8-runtime-ubuntu20.04
+# Stage 1: Start from Hugging Face's pre-built TGI image to get TGI binaries
+FROM ghcr.io/huggingface/text-generation-inference:latest as tgi-stage
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TRANSFORMERS_CACHE=/workspace/transformers_cache
-ENV HF_HOME=/workspace/hf_home
+# Stage 2: Use the RunPod base image for GPU support
+FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
+# Copy TGI from the previous stage
+COPY --from=tgi-stage /usr/local/bin /usr/local/bin
+
+# Install any additional dependencies you need
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
-    python3 \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
-
-RUN pip3 install --no-cache-dir text-generation-inference
-
+# Expose port 8000 for the TGI service
 EXPOSE 8000
 
+# Set the entry point to launch the TGI service
 ENTRYPOINT ["text-generation-launcher"]
-CMD ["--model-id", "your_model_id", "--port", "8000"]
 
+# Default command to specify the model ID and port
+CMD ["--model-id", "your_model_id", "--port", "8000"]
